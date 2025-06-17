@@ -1,0 +1,5 @@
+%syntax-version=1.0.0
+%project=flows
+%uri=https://github.com/cepro/flows-db/sqitch/
+
+initial 2025-06-17T00:00:00Z Chris Hatch <chris@cepro.energy> # Initial schema - flattened from previous migrations

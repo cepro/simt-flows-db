@@ -1,0 +1,4 @@
+#!/bin/sh
+. `dirname $0`/library.sh
+docker volume rm flows-timescaledb-volume
+

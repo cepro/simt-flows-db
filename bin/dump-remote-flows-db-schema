@@ -1,0 +1,22 @@
+#!/bin/sh
+
+DUMP_FILE=/db/flows-remote-schema-`date +%s`.sql
+HOST_DIR=`pwd`/dumps
+
+. `dirname $0`/library.sh
+
+docker run \
+        --rm -it \
+        --network host \
+        -v $HOST_DIR:/db public.ecr.aws/supabase/postgres:17.4.1.041 \
+    pg_dump \
+        --verbose \
+        --host b511kg1ny1.ohjnnq1bgo.tsdb.cloud.timescale.com \
+        --port 33247 \
+        --dbname=tsdb \
+        --username=tsdbadmin \
+        --file=$DUMP_FILE \
+        --schema=flows \
+        --clean --if-exists --schema-only
+
+echo "Dumped to $HOST_DIR/`basename $DUMP_FILE`"

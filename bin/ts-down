@@ -1,0 +1,2 @@
+#!/bin/sh
+docker rm -f flows-timescaledb > /dev/null && echo "Timescale stopped"

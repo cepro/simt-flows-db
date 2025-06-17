@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+BIN_DIR=`dirname $0`
+
+echo "\n=====     Timescale starting ....    =====\n"
+$BIN_DIR/ts-up
