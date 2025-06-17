@@ -7,13 +7,11 @@ on:
     branches: ["main"]
 
 jobs:
-  test:
+  migrate-and-seed:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          version: latest
 
       - name: Sqitch install
         run: docker pull sqitch/sqitch && curl -L https://git.io/JJKCn -o /usr/local/bin/sqitch && chmod +x /usr/local/bin/sqitch && sqitch --help
