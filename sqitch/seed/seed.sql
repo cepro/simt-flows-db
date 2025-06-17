@@ -712,7 +712,7 @@ SELECT flows.generate_register_intervals(
     0.5                                            -- max_kwh
 );
 
--- WLCE.Plot-11.C - heat register (associated with customer ownocc12@wl.ce account in supabase)
+-- WLCE.Plot-11.C - heat register (associated with customer ownocc12@wl.ce account in myenergy test db)
 SELECT flows.generate_register_intervals(
     '75d51bc9-fbc4-404a-b5e0-e6d9b29b71f4'::UUID,  -- register_id
     '2024-06-01 00:00:00 +00'::TIMESTAMPTZ,        -- start_time
@@ -721,7 +721,7 @@ SELECT flows.generate_register_intervals(
     0.5                                            -- max_kwh
 );
 
--- WLCE.Plot-11.C - power register (associated with customer ownocc12@wl.ce account in supabase)
+-- WLCE.Plot-11.C - power register (associated with customer ownocc12@wl.ce account in myenergy test db)
 SELECT flows.generate_register_intervals(
     'd4c11379-c8c6-4ca5-b785-a8da8ed31f51'::UUID,  -- register_id
     '2024-06-01 00:00:00 +00'::TIMESTAMPTZ,        -- start_time
@@ -730,7 +730,7 @@ SELECT flows.generate_register_intervals(
     0.5                                            -- max_kwh
 );
 
--- WLCE.Plot-12.C - heat register (associated with customer own11_13@wl.ce account in supabase)
+-- WLCE.Plot-12.C - heat register (associated with customer own11_13@wl.ce account in myenergy test db)
 SELECT flows.generate_register_intervals(
     'e11c704d-a6f4-48ae-810f-b74c15e9ebf3'::UUID,  -- register_id
     '2024-06-01 00:00:00 +00'::TIMESTAMPTZ,        -- start_time
@@ -739,7 +739,7 @@ SELECT flows.generate_register_intervals(
     0.5                                            -- max_kwh
 );
 
--- WLCE.Plot-12.C - power register (associated with customer own11_13@wl.ce account in supabase)
+-- WLCE.Plot-12.C - power register (associated with customer own11_13@wl.ce account in myenergy test db)
 SELECT flows.generate_register_intervals(
     '2650ff06-71d9-4974-9fea-6c3aac2e7e37'::UUID,  -- register_id
     '2024-06-01 00:00:00 +00'::TIMESTAMPTZ,        -- start_time
@@ -748,7 +748,7 @@ SELECT flows.generate_register_intervals(
     0.5                                            -- max_kwh
 );
 
--- HMCE.Plot.01.C - heat register (associated with customer ownocc1@hm.ce account in supabase)
+-- HMCE.Plot.01.C - heat register (associated with customer ownocc1@hm.ce account in myenergy test db)
 SELECT flows.generate_register_intervals(
     'f07425a9-8153-4cbd-a577-7fd945b899a9'::UUID,  -- register_id
     '2024-06-01 00:00:00 +00'::TIMESTAMPTZ,        -- start_time
@@ -757,7 +757,7 @@ SELECT flows.generate_register_intervals(
     0.5                                            -- max_kwh
 );
 
--- HMCE.Plot-01.C - power register (associated with customer ownocc1@hm.ce account in supabase)
+-- HMCE.Plot-01.C - power register (associated with customer ownocc1@hm.ce account in myenergy test db)
 SELECT flows.generate_register_intervals(
     '84d26ab1-082a-4689-9c97-9fbb2925fbf5'::UUID,  -- register_id
     '2024-06-01 00:00:00 +00'::TIMESTAMPTZ,        -- start_time

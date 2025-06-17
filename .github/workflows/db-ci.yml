@@ -12,7 +12,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
         with:
           version: latest
 
@@ -28,7 +27,7 @@ jobs:
       - name: Generate variable injected files from timescale templates
         run: bin/template-flows-migrations ./local-dev.env
       - name: Timescale Migrations
-        run: cd flows/sqitch && sqitch deploy --verbose && cd -
+        run: cd sqitch && sqitch deploy --verbose && cd -
 
       # uncomment the following to be able to ssh in and investigate an issue:
       #

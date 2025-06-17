@@ -4,9 +4,3 @@ BIN_DIR=`dirname $0`
 
 echo "\n=====     Timescale database reset ....    =====\n"
 $BIN_DIR/ts-reset
-
-echo "\n=====     Supabase database reset ....    =====\n"
-$BIN_DIR/supa-reset
-
-echo "\n=====     Supabase seed data ....    =====\n"
-$BIN_DIR/supa-seed

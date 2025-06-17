@@ -2,12 +2,12 @@
 
 [![DB CI](https://github.com/cepro/flows-db/actions/workflows/db-ci.yml/badge.svg)](https://github.com/cepro/flows-db/actions/workflows/db-ci.yml)
 
-Config, SQL, functions for the supabase database.
+Config, SQL, functions for the flows database.
 
 ## Scripts
 
-- db-up - start both supabase and timescaledb local instances
-- db-down - stop both supabase and timescaledb
+- db-up - start flows timescaledb local
+- db-down - stop flows timescaledb local
 - db-reset - run ts-reset
 - ts-up - start timescaledb local
 - ts-down - stop timescaledb local

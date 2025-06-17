@@ -18,7 +18,7 @@ sleep 5
 
 # run migrations on shadow
 echo "Apply migrations to shadow timescale database\n"
-cd $PROJECT_ROOT/flows/sqitch
+cd $PROJECT_ROOT/sqitch
 sqitch deploy $SQITCH_TARGET
 cd - > /dev/null
 

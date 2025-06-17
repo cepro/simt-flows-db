@@ -30,7 +30,6 @@ timescaleRunNew() {
         -e POSTGRES_PASSWORD=postgres \
         $PLATFORM_OPT \
         timescale/timescaledb-ha:pg17
-
     
     DOCKER_EXIT=$?
     if [ "$DOCKER_EXIT" = "0" ]; then

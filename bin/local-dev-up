@@ -8,5 +8,5 @@ $BIN_DIR/db-up
 
 $BIN_DIR/template-flows-migrations ./local-dev.env
 
-cd flows/sqitch
+cd sqitch
 sqitch deploy
