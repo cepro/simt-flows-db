@@ -1,12 +1,13 @@
+
 CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
 CREATE EXTENSION IF NOT EXISTS timescaledb_toolkit with schema "extensions";
 
 CREATE SCHEMA IF NOT EXISTS flows;
 
 
-CREATE USER flows WITH PASSWORD '$FLOWS_ROLE_PASSWORD';
-CREATE USER grafanareader WITH PASSWORD '$GRAFANAREADER_PASSWORD';
-CREATE USER tableau WITH PASSWORD '$TABLEAU_FLOWS_PASSWORD';
+CREATE USER flows WITH PASSWORD :'flows_password';
+CREATE USER grafanareader WITH PASSWORD :'grafanareader_password';
+CREATE USER tableau WITH PASSWORD :'tableau_password';
 
 
 
@@ -1218,7 +1219,7 @@ BEGIN;
 
 DO $$
 BEGIN
-    IF '$ENV' = 'local' THEN
+    IF :'env' = 'local' THEN
         CREATE OR REPLACE FUNCTION flows.generate_register_intervals(
             p_register_id UUID,
             p_start_time TIMESTAMPTZ,
@@ -1226,7 +1227,7 @@ BEGIN
             p_min_kwh NUMERIC,
             p_max_kwh NUMERIC
         )
-        RETURNS VOID AS $FUNCTION_DOLLAR_QUOTE
+        RETURNS VOID AS $function$
         DECLARE
             v_current_time TIMESTAMPTZ;
             v_random_kwh NUMERIC;
@@ -1246,8 +1247,38 @@ BEGIN
                 v_current_time := v_current_time + INTERVAL '30 minutes';
             END LOOP;
         END;
-        $FUNCTION_DOLLAR_QUOTE LANGUAGE plpgsql;
+        $function$ LANGUAGE plpgsql;
     END IF;
 END $$;
 
 COMMIT;
+
+
+CREATE FUNCTION flows.get_meters_for_cli(esco_filter text, feeder_filter text) RETURNS TABLE(id uuid, ip_address text, serial text, name text, esco text, csq integer, health text, hardware text, feeder text)
+    LANGUAGE plpgsql
+    AS $$
+	BEGIN
+		RETURN QUERY
+		SELECT 
+			mr.id as id, host(mr.ip_address) as ip_address,
+			mr.serial as serial,
+			mr.name as name, 
+			e.code as esco,
+			ms.csq as csq,
+			ms.health::text as health,
+			mr.hardware as hardware,
+			fr."name" 
+		FROM 
+			flows.meter_registry mr
+			JOIN flows.meter_shadows ms ON mr.id = ms.id
+			LEFT JOIN flows.escos e ON mr.esco = e.id
+			LEFT JOIN flows.service_head_meter shm ON mr.id = shm.meter
+			LEFT JOIN flows.service_head_registry shr ON shr.id = shm.service_head
+			LEFT JOIN flows.feeder_registry fr ON shr.feeder = fr.id
+		WHERE 
+			(esco_filter is null OR e.code = esco_filter) AND
+			mr.mode = 'active' AND
+			(feeder_filter is null OR fr.name = feeder_filter OR (feeder_filter = 'null' AND shr.feeder IS NULL));
+	END;
+	$$;
+
