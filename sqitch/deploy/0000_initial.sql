@@ -1217,9 +1217,10 @@ BEGIN;
 
 -- if local add this function for half hourly data generation from seed.sql
 
-DO $$
-BEGIN
-    IF :'env' = 'local' THEN
+SELECT (:'env' = 'local') AS is_local \gset
+\if :is_local
+    DO $$
+    BEGIN
         CREATE OR REPLACE FUNCTION flows.generate_register_intervals(
             p_register_id UUID,
             p_start_time TIMESTAMPTZ,
@@ -1248,8 +1249,9 @@ BEGIN
             END LOOP;
         END;
         $function$ LANGUAGE plpgsql;
-    END IF;
-END $$;
+        END;
+    $$;
+\endif
 
 COMMIT;
 
