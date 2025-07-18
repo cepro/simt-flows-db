@@ -32,5 +32,6 @@ docker run --rm \
         -v ON_ERROR_STOP=1 \
         --host 0.0.0.0 \
         --port 15432 \
-        --username=postgres \
+        --username=tsdbadmin \
+        --dbname=tsdb \
         --file=/db/$SCRIPT_FILE
