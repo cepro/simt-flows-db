@@ -1256,15 +1256,16 @@ SELECT (:'env' = 'local') AS is_local \gset
 COMMIT;
 
 
-CREATE FUNCTION flows.get_meters_for_cli(esco_filter text, feeder_filter text) RETURNS TABLE(id uuid, ip_address text, serial text, name text, esco text, csq integer, health text, hardware text, feeder text)
-    LANGUAGE plpgsql
-    AS $$
+CREATE OR REPLACE FUNCTION flows.get_meters_for_cli(esco_filter text, feeder_filter text) RETURNS TABLE(id uuid, ip_address text, serial text, name text, single_meter_app boolean, esco text, csq integer, health text, hardware text, feeder text)
+ LANGUAGE plpgsql
+AS $$
 	BEGIN
 		RETURN QUERY
 		SELECT 
 			mr.id as id, host(mr.ip_address) as ip_address,
 			mr.serial as serial,
 			mr.name as name, 
+			mr.single_meter_app,
 			e.code as esco,
 			ms.csq as csq,
 			ms.health::text as health,
@@ -1281,6 +1282,6 @@ CREATE FUNCTION flows.get_meters_for_cli(esco_filter text, feeder_filter text) R
 			(esco_filter is null OR e.code = esco_filter) AND
 			mr.mode = 'active' AND
 			(feeder_filter is null OR fr.name = feeder_filter OR (feeder_filter = 'null' AND shr.feeder IS NULL));
-	END;
+		END;
 	$$;
 
