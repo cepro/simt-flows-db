@@ -642,6 +642,7 @@ INSERT INTO flows.meter_metrics (name, notes, enabled, run_frequency) VALUES
     ('SyncerPrepayBalance', 'Sync prepay balance', true, 'hourly'),
     ('SyncerBacklight', 'Sync backlight setting', true, 'daily'),
     ('SyncerLoadSwitch', 'Sync load switch setting', true, 'daily'),
+    ('SyncerFirmwareVersion', 'Sync firmware version', true, 'daily'),
     ('SyncerPrepayEnabled', 'Sync prepay enabled flag', true, 'daily'),
     ('SyncerReads', 'Sync import and export read', true, 'daily'),
     ('SyncerDaylightSavingsEnabled', 'Sync daylight savings correction flag', true, 'daily'),
