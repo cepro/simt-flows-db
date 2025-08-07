@@ -22,6 +22,16 @@ A set of migration scripts is maintained.
 [Sqitch](https://sqitch.org) is used to manage migrations include applying
 deployments and rollbacks.
 
+### Run migrations
+
+```sh
+# setup secrets - edit this file with new passwords
+sqitch> cp sqitch_secrets.conf.example sqitch_secrets.conf
+
+# run the migrations - add your timescale-<org> connection details to sqitch.conf
+SQITCH_USER_CONFIG=sqitch_secrets.conf sqitch deploy --target timescale-<org>
+```
+
 ### Generate Migration from Diff
 
 see bin/flows-diff-local which will generate a SQL diff between the currently
