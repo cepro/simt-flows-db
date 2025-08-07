@@ -1,14 +1,13 @@
+
 CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
 CREATE EXTENSION IF NOT EXISTS timescaledb_toolkit with schema "extensions";
 
 CREATE SCHEMA IF NOT EXISTS flows;
 
 
-CREATE USER $BESSCONTROLLER_USERNAME WITH PASSWORD '$BESSCONTROLLER_PASSWORD';
-CREATE USER flows WITH PASSWORD '$FLOWS_ROLE_PASSWORD';
-CREATE USER grafanareader WITH PASSWORD '$GRAFANAREADER_PASSWORD';
-CREATE USER $MODOSCRAPER_USERNAME WITH PASSWORD '$MODOSCRAPER_PASSWORD';
-CREATE USER tableau WITH PASSWORD '$TABLEAU_FLOWS_PASSWORD';
+CREATE USER flows WITH PASSWORD :'flows_password';
+CREATE USER grafanareader WITH PASSWORD :'grafanareader_password';
+CREATE USER tableau WITH PASSWORD :'tableau_password';
 
 
 
@@ -78,210 +77,6 @@ CREATE TYPE flows.register_nature_enum AS ENUM (
     'power',
     'solar'
 );
-
-
-CREATE FUNCTION flows.get_meter_readings_30m(start_time timestamp with time zone DEFAULT (now() - '24:00:00'::interval), end_time timestamp with time zone DEFAULT now(), device_ids uuid[] DEFAULT NULL::uuid[]) RETURNS TABLE(time_b timestamp with time zone, device_id uuid, frequency_avg double precision, voltage_line_average_avg double precision, current_phase_a_avg double precision, current_phase_b_avg double precision, current_phase_c_avg double precision, current_phase_average_avg double precision, power_phase_a_active_avg double precision, power_phase_b_active_avg double precision, power_phase_c_active_avg double precision, power_total_active_avg double precision, power_total_reactive_avg double precision, power_total_apparent_avg double precision, power_factor_total_avg double precision, energy_imported_active_min real, energy_exported_active_min real, energy_imported_phase_a_active_min real, energy_exported_phase_a_active_min real, energy_imported_phase_b_active_min real, energy_exported_phase_b_active_min real, energy_imported_phase_c_active_min real, energy_exported_phase_c_active_min real, energy_imported_active_delta double precision, energy_exported_active_delta double precision, energy_imported_phase_a_active_delta double precision, energy_exported_phase_a_active_delta double precision, energy_imported_phase_b_active_delta double precision, energy_exported_phase_b_active_delta double precision, energy_imported_phase_c_active_delta double precision, energy_exported_phase_c_active_delta double precision)
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        t.time_b, 
-        t.device_id, 
-        t.frequency_avg,
-        t.voltage_line_average_avg,
-        t.current_phase_a_avg,
-        t.current_phase_b_avg,
-        t.current_phase_c_avg,
-        t.current_phase_average_avg,
-        t.power_phase_a_active_avg,
-        t.power_phase_b_active_avg,
-        t.power_phase_c_active_avg,
-        t.power_total_active_avg,
-        t.power_total_reactive_avg,
-        t.power_total_apparent_avg,
-        t.power_factor_total_avg,
-        t.energy_imported_active_min,
-        t.energy_exported_active_min,
-        t.energy_imported_phase_a_active_min,
-        t.energy_exported_phase_a_active_min, 
-        t.energy_imported_phase_b_active_min,
-        t.energy_exported_phase_b_active_min, 
-        t.energy_imported_phase_c_active_min,
-        t.energy_exported_phase_c_active_min,
-        
-        CASE WHEN t.energy_imported_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_imported_active_counter_agg, t.time_b, '30m', 
-                             LAG(t.energy_imported_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_imported_active_counter_agg) OVER ordered_meter)
-        END AS energy_imported_active_delta,
-        
-        CASE WHEN t.energy_exported_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_exported_active_counter_agg, t.time_b, '30m', 
-                             LAG(t.energy_exported_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_exported_active_counter_agg) OVER ordered_meter)
-        END AS energy_exported_active_delta,
-        
-        CASE WHEN t.energy_imported_phase_a_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_imported_phase_a_active_counter_agg, t.time_b, '30m', 
-                             LAG(t.energy_imported_phase_a_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_imported_phase_a_active_counter_agg) OVER ordered_meter)
-        END AS energy_imported_phase_a_active_delta,
-        
-        CASE WHEN t.energy_exported_phase_a_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_exported_phase_a_active_counter_agg, t.time_b, '30m', 
-                             LAG(t.energy_exported_phase_a_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_exported_phase_a_active_counter_agg) OVER ordered_meter)
-        END AS energy_exported_phase_a_active_delta,
-        
-        CASE WHEN t.energy_imported_phase_b_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_imported_phase_b_active_counter_agg, t.time_b, '30m', 
-                             LAG(t.energy_imported_phase_b_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_imported_phase_b_active_counter_agg) OVER ordered_meter)
-        END AS energy_imported_phase_b_active_delta,
-        
-        CASE WHEN t.energy_exported_phase_b_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_exported_phase_b_active_counter_agg, t.time_b, '30m', 
-                             LAG(t.energy_exported_phase_b_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_exported_phase_b_active_counter_agg) OVER ordered_meter)
-        END AS energy_exported_phase_b_active_delta,
-        
-        CASE WHEN t.energy_imported_phase_c_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_imported_phase_c_active_counter_agg, t.time_b, '30m', 
-                             LAG(t.energy_imported_phase_c_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_imported_phase_c_active_counter_agg) OVER ordered_meter)
-        END AS energy_imported_phase_c_active_delta,
-        
-        CASE WHEN t.energy_exported_phase_c_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_exported_phase_c_active_counter_agg, t.time_b, '30m', 
-                             LAG(t.energy_exported_phase_c_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_exported_phase_c_active_counter_agg) OVER ordered_meter)
-        END AS energy_exported_phase_c_active_delta
-        
-    FROM flows.mg_meter_readings_30m_intermediate t
-    WHERE t.time_b BETWEEN start_time AND end_time
-		AND (device_ids IS NULL OR t.device_id = ANY(device_ids))
-    WINDOW ordered_meter AS (PARTITION BY t.device_id ORDER BY t.time_b);
-END;
-$$;
-
-
-CREATE FUNCTION flows.get_meter_readings_5m(start_time timestamp with time zone DEFAULT (now() - '24:00:00'::interval), end_time timestamp with time zone DEFAULT now(), device_ids uuid[] DEFAULT NULL::uuid[]) RETURNS TABLE(time_b timestamp with time zone, device_id uuid, frequency_avg double precision, voltage_line_average_avg double precision, current_phase_a_avg double precision, current_phase_b_avg double precision, current_phase_c_avg double precision, current_phase_average_avg double precision, power_phase_a_active_avg double precision, power_phase_b_active_avg double precision, power_phase_c_active_avg double precision, power_total_active_avg double precision, power_total_reactive_avg double precision, power_total_apparent_avg double precision, power_factor_total_avg double precision, energy_imported_active_min real, energy_exported_active_min real, energy_imported_phase_a_active_min real, energy_exported_phase_a_active_min real, energy_imported_phase_b_active_min real, energy_exported_phase_b_active_min real, energy_imported_phase_c_active_min real, energy_exported_phase_c_active_min real, energy_imported_active_delta double precision, energy_exported_active_delta double precision, energy_imported_phase_a_active_delta double precision, energy_exported_phase_a_active_delta double precision, energy_imported_phase_b_active_delta double precision, energy_exported_phase_b_active_delta double precision, energy_imported_phase_c_active_delta double precision, energy_exported_phase_c_active_delta double precision)
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        t.time_b, 
-        t.device_id, 
-        t.frequency_avg,
-        t.voltage_line_average_avg,
-        t.current_phase_a_avg,
-        t.current_phase_b_avg,
-        t.current_phase_c_avg,
-        t.current_phase_average_avg,
-        t.power_phase_a_active_avg,
-        t.power_phase_b_active_avg,
-        t.power_phase_c_active_avg,
-        t.power_total_active_avg,
-        t.power_total_reactive_avg,
-        t.power_total_apparent_avg,
-        t.power_factor_total_avg,
-        t.energy_imported_active_min,
-        t.energy_exported_active_min,
-        t.energy_imported_phase_a_active_min,
-        t.energy_exported_phase_a_active_min, 
-        t.energy_imported_phase_b_active_min,
-        t.energy_exported_phase_b_active_min, 
-        t.energy_imported_phase_c_active_min,
-        t.energy_exported_phase_c_active_min,
-        
-        CASE WHEN t.energy_imported_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_imported_active_counter_agg, t.time_b, '5m', 
-                             LAG(t.energy_imported_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_imported_active_counter_agg) OVER ordered_meter)
-        END AS energy_imported_active_delta,
-        
-        CASE WHEN t.energy_exported_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_exported_active_counter_agg, t.time_b, '5m', 
-                             LAG(t.energy_exported_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_exported_active_counter_agg) OVER ordered_meter)
-        END AS energy_exported_active_delta,
-        
-        CASE WHEN t.energy_imported_phase_a_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_imported_phase_a_active_counter_agg, t.time_b, '5m', 
-                             LAG(t.energy_imported_phase_a_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_imported_phase_a_active_counter_agg) OVER ordered_meter)
-        END AS energy_imported_phase_a_active_delta,
-        
-        CASE WHEN t.energy_exported_phase_a_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_exported_phase_a_active_counter_agg, t.time_b, '5m', 
-                             LAG(t.energy_exported_phase_a_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_exported_phase_a_active_counter_agg) OVER ordered_meter)
-        END AS energy_exported_phase_a_active_delta,
-        
-        CASE WHEN t.energy_imported_phase_b_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_imported_phase_b_active_counter_agg, t.time_b, '5m', 
-                             LAG(t.energy_imported_phase_b_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_imported_phase_b_active_counter_agg) OVER ordered_meter)
-        END AS energy_imported_phase_b_active_delta,
-        
-        CASE WHEN t.energy_exported_phase_b_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_exported_phase_b_active_counter_agg, t.time_b, '5m', 
-                             LAG(t.energy_exported_phase_b_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_exported_phase_b_active_counter_agg) OVER ordered_meter)
-        END AS energy_exported_phase_b_active_delta,
-        
-        CASE WHEN t.energy_imported_phase_c_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_imported_phase_c_active_counter_agg, t.time_b, '5m', 
-                             LAG(t.energy_imported_phase_c_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_imported_phase_c_active_counter_agg) OVER ordered_meter)
-        END AS energy_imported_phase_c_active_delta,
-        
-        CASE WHEN t.energy_exported_phase_c_active_counter_agg IS NULL THEN
-          NULL 
-        ELSE
-          interpolated_delta(t.energy_exported_phase_c_active_counter_agg, t.time_b, '5m', 
-                             LAG(t.energy_exported_phase_c_active_counter_agg) OVER ordered_meter, 
-                             LEAD(t.energy_exported_phase_c_active_counter_agg) OVER ordered_meter)
-        END AS energy_exported_phase_c_active_delta
-        
-    FROM flows.mg_meter_readings_5m_intermediate t
-    WHERE t.time_b BETWEEN start_time AND end_time
-		AND (device_ids IS NULL OR t.device_id = ANY(device_ids))
-    WINDOW ordered_meter AS (PARTITION BY t.device_id ORDER BY t.time_b);
-END;
-$$;
 
 
 CREATE FUNCTION flows.meter_3p_voltage_insert() RETURNS trigger
@@ -437,52 +232,6 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 
-CREATE TABLE flows.mg_meter_readings (
-    "time" timestamp with time zone NOT NULL,
-    device_id uuid NOT NULL,
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    frequency real,
-    voltage_line_average real,
-    current_phase_a real,
-    current_phase_b real,
-    current_phase_c real,
-    current_phase_average real,
-    power_phase_a_active real,
-    power_phase_b_active real,
-    power_phase_c_active real,
-    power_total_active real,
-    power_total_reactive real,
-    power_total_apparent real,
-    power_factor_total real,
-    energy_imported_active real,
-    energy_exported_active real,
-    energy_imported_phase_a_active real,
-    energy_exported_phase_a_active real,
-    energy_imported_phase_b_active real,
-    energy_exported_phase_b_active real,
-    energy_imported_phase_c_active real,
-    energy_exported_phase_c_active real
-);
-
-
-
-SELECT public.create_hypertable('flows.mg_meter_readings', 'time');
-
-
-
-CREATE TABLE flows.mg_bess_readings (
-    "time" timestamp with time zone NOT NULL,
-    device_id uuid NOT NULL,
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    soe real NOT NULL,
-    target_power real NOT NULL
-);
-
-
-SELECT public.create_hypertable('flows.mg_bess_readings', 'time');
-
 
 CREATE TABLE flows.circuit_register (
     circuit uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -566,17 +315,6 @@ CREATE TABLE flows.meter_prepay_balance (
 );
 
 
-CREATE TABLE flows.market_data (
-    "time" timestamp with time zone NOT NULL,
-    type integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    value real
-);
-
-
-
-SELECT public.create_hypertable('flows.market_data', by_range('time'));
-
 SELECT public.create_hypertable('flows.meter_csq', 'timestamp');
 SELECT public.create_hypertable('flows.meter_health_history', 'timestamp');
 SELECT public.create_hypertable('flows.meter_voltage', 'timestamp');
@@ -630,25 +368,6 @@ CREATE TABLE flows.feeder_registry (
     esco uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
-
-
-CREATE TABLE flows.market_data_types (
-    id integer NOT NULL,
-    name text NOT NULL
-);
-
-
-CREATE SEQUENCE flows.market_data_types_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-
-ALTER SEQUENCE flows.market_data_types_id_seq OWNED BY flows.market_data_types.id;
 
 
 
@@ -835,108 +554,6 @@ CREATE VIEW flows.meters_offline_recently AS
   ORDER BY (max(mc."timestamp"));
 
 
-CREATE MATERIALIZED VIEW flows.mg_bess_readings_5m
-WITH (timescaledb.continuous) AS
-SELECT mg_bess_readings.device_id,
-    time_bucket('00:05:00'::interval, mg_bess_readings."time") AS time_b,
-    avg(mg_bess_readings.soe) AS soe_avg,
-    avg(mg_bess_readings.target_power) AS target_power_avg
-   FROM flows.mg_bess_readings
-  GROUP BY mg_bess_readings.device_id, (time_bucket('00:05:00'::interval, mg_bess_readings."time"));
-
-
-
-CREATE MATERIALIZED VIEW flows.mg_bess_readings_30m
-WITH (timescaledb.continuous) AS
-SELECT mg_bess_readings.device_id,
-    time_bucket('00:30:00'::interval, mg_bess_readings."time") AS time_b,
-    avg(mg_bess_readings.soe) AS soe_avg,
-    avg(mg_bess_readings.target_power) AS target_power_avg
-   FROM flows.mg_bess_readings
-  GROUP BY mg_bess_readings.device_id, (time_bucket('00:30:00'::interval, mg_bess_readings."time"));
-
-
-CREATE TABLE flows.mg_device_registry (
-    device_id uuid NOT NULL,
-    site text,
-    name text,
-    type text
-);
-
-
-CREATE MATERIALIZED VIEW flows.mg_meter_readings_30m_intermediate
-WITH (timescaledb.continuous) AS
-SELECT mg_meter_readings.device_id,
-    time_bucket('00:30:00'::interval, mg_meter_readings."time") AS time_b,
-    avg(mg_meter_readings.frequency) AS frequency_avg,
-    avg(mg_meter_readings.voltage_line_average) AS voltage_line_average_avg,
-    avg(mg_meter_readings.current_phase_a) AS current_phase_a_avg,
-    avg(mg_meter_readings.current_phase_b) AS current_phase_b_avg,
-    avg(mg_meter_readings.current_phase_c) AS current_phase_c_avg,
-    avg(mg_meter_readings.current_phase_average) AS current_phase_average_avg,
-    avg(mg_meter_readings.power_phase_a_active) AS power_phase_a_active_avg,
-    avg(mg_meter_readings.power_phase_b_active) AS power_phase_b_active_avg,
-    avg(mg_meter_readings.power_phase_c_active) AS power_phase_c_active_avg,
-    avg(mg_meter_readings.power_total_active) AS power_total_active_avg,
-    avg(mg_meter_readings.power_total_reactive) AS power_total_reactive_avg,
-    avg(mg_meter_readings.power_total_apparent) AS power_total_apparent_avg,
-    avg(mg_meter_readings.power_factor_total) AS power_factor_total_avg,
-    min(mg_meter_readings.energy_imported_active) AS energy_imported_active_min,
-    min(mg_meter_readings.energy_exported_active) AS energy_exported_active_min,
-    min(mg_meter_readings.energy_imported_phase_a_active) AS energy_imported_phase_a_active_min,
-    min(mg_meter_readings.energy_exported_phase_a_active) AS energy_exported_phase_a_active_min,
-    min(mg_meter_readings.energy_imported_phase_b_active) AS energy_imported_phase_b_active_min,
-    min(mg_meter_readings.energy_exported_phase_b_active) AS energy_exported_phase_b_active_min,
-    min(mg_meter_readings.energy_imported_phase_c_active) AS energy_imported_phase_c_active_min,
-    min(mg_meter_readings.energy_exported_phase_c_active) AS energy_exported_phase_c_active_min,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_imported_active)::double precision) AS energy_imported_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_exported_active)::double precision) AS energy_exported_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_imported_phase_a_active)::double precision) AS energy_imported_phase_a_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_exported_phase_a_active)::double precision) AS energy_exported_phase_a_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_imported_phase_b_active)::double precision) AS energy_imported_phase_b_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_exported_phase_b_active)::double precision) AS energy_exported_phase_b_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_imported_phase_c_active)::double precision) AS energy_imported_phase_c_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_exported_phase_c_active)::double precision) AS energy_exported_phase_c_active_counter_agg
-   FROM flows.mg_meter_readings
-  GROUP BY mg_meter_readings.device_id, (time_bucket('00:30:00'::interval, mg_meter_readings."time"));
-
-
-CREATE MATERIALIZED VIEW flows.mg_meter_readings_5m_intermediate
-WITH (timescaledb.continuous) AS
-SELECT mg_meter_readings.device_id,
-    time_bucket('00:05:00'::interval, mg_meter_readings."time") AS time_b,
-    avg(mg_meter_readings.frequency) AS frequency_avg,
-    avg(mg_meter_readings.voltage_line_average) AS voltage_line_average_avg,
-    avg(mg_meter_readings.current_phase_a) AS current_phase_a_avg,
-    avg(mg_meter_readings.current_phase_b) AS current_phase_b_avg,
-    avg(mg_meter_readings.current_phase_c) AS current_phase_c_avg,
-    avg(mg_meter_readings.current_phase_average) AS current_phase_average_avg,
-    avg(mg_meter_readings.power_phase_a_active) AS power_phase_a_active_avg,
-    avg(mg_meter_readings.power_phase_b_active) AS power_phase_b_active_avg,
-    avg(mg_meter_readings.power_phase_c_active) AS power_phase_c_active_avg,
-    avg(mg_meter_readings.power_total_active) AS power_total_active_avg,
-    avg(mg_meter_readings.power_total_reactive) AS power_total_reactive_avg,
-    avg(mg_meter_readings.power_total_apparent) AS power_total_apparent_avg,
-    avg(mg_meter_readings.power_factor_total) AS power_factor_total_avg,
-    min(mg_meter_readings.energy_imported_active) AS energy_imported_active_min,
-    min(mg_meter_readings.energy_exported_active) AS energy_exported_active_min,
-    min(mg_meter_readings.energy_imported_phase_a_active) AS energy_imported_phase_a_active_min,
-    min(mg_meter_readings.energy_exported_phase_a_active) AS energy_exported_phase_a_active_min,
-    min(mg_meter_readings.energy_imported_phase_b_active) AS energy_imported_phase_b_active_min,
-    min(mg_meter_readings.energy_exported_phase_b_active) AS energy_exported_phase_b_active_min,
-    min(mg_meter_readings.energy_imported_phase_c_active) AS energy_imported_phase_c_active_min,
-    min(mg_meter_readings.energy_exported_phase_c_active) AS energy_exported_phase_c_active_min,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_imported_active)::double precision) AS energy_imported_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_exported_active)::double precision) AS energy_exported_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_imported_phase_a_active)::double precision) AS energy_imported_phase_a_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_exported_phase_a_active)::double precision) AS energy_exported_phase_a_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_imported_phase_b_active)::double precision) AS energy_imported_phase_b_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_exported_phase_b_active)::double precision) AS energy_exported_phase_b_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_imported_phase_c_active)::double precision) AS energy_imported_phase_c_active_counter_agg,
-    counter_agg(mg_meter_readings."time", (mg_meter_readings.energy_exported_phase_c_active)::double precision) AS energy_exported_phase_c_active_counter_agg
-   FROM flows.mg_meter_readings
-  GROUP BY mg_meter_readings.device_id, (time_bucket('00:05:00'::interval, mg_meter_readings."time"));
-
 
 
 CREATE TABLE flows.properties (
@@ -1038,10 +655,6 @@ COMMENT ON TABLE flows.sites_new IS 'An ESCO can have one more sites defined in 
 
 
 
-ALTER TABLE ONLY flows.market_data_types ALTER COLUMN id SET DEFAULT nextval('flows.market_data_types_id_seq'::regclass);
-
-
-
 ALTER TABLE ONLY flows.ev_chargers
     ADD CONSTRAINT chargers_pkey PRIMARY KEY (id);
 
@@ -1054,11 +667,6 @@ ALTER TABLE ONLY flows.circuits
 
 ALTER TABLE ONLY flows.circuit_register
     ADD CONSTRAINT circuit_registers_pkey PRIMARY KEY (circuit, register, start_time);
-
-
-
-ALTER TABLE ONLY flows.mg_device_registry
-    ADD CONSTRAINT device_registry_pkey PRIMARY KEY (device_id);
 
 
 
@@ -1079,11 +687,6 @@ ALTER TABLE ONLY flows.feeder_registry
 
 ALTER TABLE ONLY flows.feeder_registry
     ADD CONSTRAINT feeder_registry_pkey PRIMARY KEY (id);
-
-
-
-ALTER TABLE ONLY flows.market_data_types
-    ADD CONSTRAINT market_data_types_pkey PRIMARY KEY (id);
 
 
 
@@ -1212,13 +815,6 @@ ALTER TABLE ONLY flows.sites_new
 
 
 
-CREATE UNIQUE INDEX bess_readings_deviceid_time_idx ON flows.mg_bess_readings USING btree (device_id, "time");
-
-
-
-CREATE INDEX bess_readings_time_idx ON flows.mg_bess_readings USING btree ("time" DESC);
-
-
 
 CREATE UNIQUE INDEX meter_csq_meter_time_idx ON flows.meter_csq USING btree (meter_id, "timestamp");
 
@@ -1230,13 +826,6 @@ CREATE INDEX meter_interval_hh_timestamp_idx ON flows.register_interval_hh USING
 
 CREATE UNIQUE INDEX meter_prepay_balance_meter_time_idx ON flows.meter_prepay_balance USING btree (meter_id, "timestamp");
 
-
-
-CREATE UNIQUE INDEX meter_readings_deviceid_time_idx ON flows.mg_meter_readings USING btree (device_id, "time");
-
-
-
-CREATE INDEX meter_readings_time_idx ON flows.mg_meter_readings USING btree ("time" DESC);
 
 
 
@@ -1412,29 +1001,11 @@ SELECT add_job(
     -- first run is 3am the day after the migration is run:
     initial_start => (date_trunc('day', now()) + interval '27 hours')::timestamptz);
 
-SELECT add_continuous_aggregate_policy('flows.mg_meter_readings_5m_intermediate', start_offset => NULL, end_offset => NULL, schedule_interval => INTERVAL '1 minute');
-SELECT add_continuous_aggregate_policy('flows.mg_meter_readings_30m_intermediate', start_offset => NULL, end_offset => NULL, schedule_interval => INTERVAL '5 minute');
-SELECT add_continuous_aggregate_policy('flows.mg_bess_readings_5m', start_offset => NULL, end_offset => NULL, schedule_interval => INTERVAL '1 minute');
-SELECT add_continuous_aggregate_policy('flows.mg_bess_readings_30m', start_offset => NULL, end_offset => NULL, schedule_interval => INTERVAL '5 minute');
 
 
 GRANT USAGE ON SCHEMA flows TO flows;
 GRANT USAGE ON SCHEMA flows TO grafanareader;
-GRANT USAGE ON SCHEMA flows TO modoscraper;
-GRANT USAGE ON SCHEMA flows TO besscontroller;
 GRANT USAGE ON SCHEMA flows TO tableau;
-
-
-
-GRANT SELECT ON TABLE flows.mg_meter_readings TO grafanareader;
-GRANT SELECT,INSERT ON TABLE flows.mg_meter_readings TO besscontroller;
-GRANT SELECT ON TABLE flows.mg_meter_readings TO tableau;
-
-
-
-GRANT SELECT ON TABLE flows.mg_bess_readings TO grafanareader;
-GRANT SELECT,INSERT ON TABLE flows.mg_bess_readings TO besscontroller;
-GRANT SELECT ON TABLE flows.mg_bess_readings TO tableau;
 
 
 
@@ -1492,13 +1063,6 @@ GRANT SELECT ON TABLE flows.meter_prepay_balance TO tableau;
 
 
 
-GRANT SELECT ON TABLE flows.market_data TO grafanareader;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE flows.market_data TO flows;
-GRANT SELECT ON TABLE flows.market_data TO tableau;
-
-GRANT SELECT,INSERT ON TABLE flows.market_data TO modoscraper;
-
-
 GRANT SELECT ON TABLE flows.circuit_interval_monthly TO grafanareader;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE flows.circuit_interval_monthly TO flows;
 GRANT SELECT ON TABLE flows.circuit_interval_monthly TO tableau;
@@ -1528,14 +1092,6 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE flows.feeder_registry TO flows;
 GRANT SELECT ON TABLE flows.feeder_registry TO tableau;
 
 
-
-GRANT SELECT ON TABLE flows.market_data_types TO grafanareader;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE flows.market_data_types TO flows;
-GRANT SELECT ON TABLE flows.market_data_types TO tableau;
-
-
-
-GRANT USAGE ON SEQUENCE flows.market_data_types_id_seq TO flows;
 
 
 GRANT SELECT ON TABLE flows.meter_event_log TO grafanareader;
@@ -1609,30 +1165,6 @@ GRANT SELECT ON TABLE flows.meters_offline_recently TO tableau;
 
 
 
-GRANT SELECT ON TABLE flows.mg_bess_readings_30m TO grafanareader;
-GRANT SELECT ON TABLE flows.mg_bess_readings_30m TO tableau;
-
-
-
-GRANT SELECT ON TABLE flows.mg_bess_readings_5m TO grafanareader;
-GRANT SELECT ON TABLE flows.mg_bess_readings_5m TO tableau;
-
-
-
-GRANT SELECT ON TABLE flows.mg_device_registry TO grafanareader;
-GRANT SELECT ON TABLE flows.mg_device_registry TO tableau;
-
-
-
-GRANT SELECT ON TABLE flows.mg_meter_readings_30m_intermediate TO grafanareader;
-GRANT SELECT ON TABLE flows.mg_meter_readings_30m_intermediate TO tableau;
-
-
-
-GRANT SELECT ON TABLE flows.mg_meter_readings_5m_intermediate TO grafanareader;
-GRANT SELECT ON TABLE flows.mg_meter_readings_5m_intermediate TO tableau;
-
-
 
 GRANT SELECT ON TABLE flows.properties TO grafanareader;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE flows.properties TO flows;
@@ -1685,9 +1217,10 @@ BEGIN;
 
 -- if local add this function for half hourly data generation from seed.sql
 
-DO $$
-BEGIN
-    IF '$ENV' = 'local' THEN
+SELECT (:'env' = 'local') AS is_local \gset
+\if :is_local
+    DO $$
+    BEGIN
         CREATE OR REPLACE FUNCTION flows.generate_register_intervals(
             p_register_id UUID,
             p_start_time TIMESTAMPTZ,
@@ -1695,7 +1228,7 @@ BEGIN
             p_min_kwh NUMERIC,
             p_max_kwh NUMERIC
         )
-        RETURNS VOID AS $FUNCTION_DOLLAR_QUOTE
+        RETURNS VOID AS $function$
         DECLARE
             v_current_time TIMESTAMPTZ;
             v_random_kwh NUMERIC;
@@ -1715,8 +1248,40 @@ BEGIN
                 v_current_time := v_current_time + INTERVAL '30 minutes';
             END LOOP;
         END;
-        $FUNCTION_DOLLAR_QUOTE LANGUAGE plpgsql;
-    END IF;
-END $$;
+        $function$ LANGUAGE plpgsql;
+        END;
+    $$;
+\endif
 
 COMMIT;
+
+
+CREATE OR REPLACE FUNCTION flows.get_meters_for_cli(esco_filter text, feeder_filter text) RETURNS TABLE(id uuid, ip_address text, serial text, name text, single_meter_app boolean, esco text, csq integer, health text, hardware text, feeder text)
+ LANGUAGE plpgsql
+AS $$
+	BEGIN
+		RETURN QUERY
+		SELECT 
+			mr.id as id, host(mr.ip_address) as ip_address,
+			mr.serial as serial,
+			mr.name as name, 
+			mr.single_meter_app,
+			e.code as esco,
+			ms.csq as csq,
+			ms.health::text as health,
+			mr.hardware as hardware,
+			fr."name" 
+		FROM 
+			flows.meter_registry mr
+			JOIN flows.meter_shadows ms ON mr.id = ms.id
+			LEFT JOIN flows.escos e ON mr.esco = e.id
+			LEFT JOIN flows.service_head_meter shm ON mr.id = shm.meter
+			LEFT JOIN flows.service_head_registry shr ON shr.id = shm.service_head
+			LEFT JOIN flows.feeder_registry fr ON shr.feeder = fr.id
+		WHERE 
+			(esco_filter is null OR e.code = esco_filter) AND
+			mr.mode = 'active' AND
+			(feeder_filter is null OR fr.name = feeder_filter OR (feeder_filter = 'null' AND shr.feeder IS NULL));
+		END;
+	$$;
+
