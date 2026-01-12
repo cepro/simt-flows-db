@@ -6,3 +6,5 @@
 0001_upstream_updates 2025-07-25T00:00:00Z Chris Hatch <chris@cepro.energy> # Updates from simt-supabase repo recent
 0002_reads_insert_handle_no_register 2025-07-30T10:36:29Z Chris Hatch <chris@cepro.energy> # handle register doesn't exist on read insert
 0003_meter_mode_active_default 2025-07-30T11:29:36Z Chris Hatch <chris@cepro.energy> # default meter_registry.mode to active
+0004_meter_shadows_clock_synced_at 2026-01-12T12:50:00Z Chris Hatch <chris@cepro.energy> # add clock_time_diff_synced_at to meter_shadows
+

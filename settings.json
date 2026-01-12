@@ -1,0 +1,14 @@
+{
+  "mcp": {
+    "mcpServers": {
+      "postgres": {
+        "command": "pnpm",
+        "args": [
+          "dlx",
+          "@modelcontextprotocol/server-postgres",
+          "postgresql://tsdbadmin@hwduz83g2a.ewrjuzaefq.tsdb.cloud.timescale.com:33025/tsdb"
+        ]
+      }
+    }
+  }
+}
