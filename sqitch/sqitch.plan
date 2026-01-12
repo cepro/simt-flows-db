@@ -8,3 +8,4 @@
 0003_meter_mode_active_default 2025-07-30T11:29:36Z Chris Hatch <chris@cepro.energy> # default meter_registry.mode to active
 0004_meter_shadows_clock_synced_at 2026-01-12T12:50:00Z Chris Hatch <chris@cepro.energy> # add clock_time_diff_synced_at to meter_shadows
 
+0005_flows_patch_from_myenergy 2026-01-12T03:01:58Z Chris Hatch <chris@cepro.energy> # Move some flows only migrations from myenergy into flows - they should never have been created there
