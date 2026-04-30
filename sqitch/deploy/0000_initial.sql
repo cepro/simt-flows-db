@@ -5,9 +5,23 @@ CREATE EXTENSION IF NOT EXISTS timescaledb_toolkit with schema "extensions";
 CREATE SCHEMA IF NOT EXISTS flows;
 
 
-CREATE USER flows WITH PASSWORD :'flows_password';
-CREATE USER grafanareader WITH PASSWORD :'grafanareader_password';
-CREATE USER tableau WITH PASSWORD :'tableau_password';
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'flows') THEN
+    CREATE ROLE flows LOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'grafanareader') THEN
+    CREATE ROLE grafanareader LOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'tableau') THEN
+    CREATE ROLE tableau LOGIN;
+  END IF;
+END
+$$;
+
+ALTER USER flows WITH PASSWORD :'flows_password';
+ALTER USER grafanareader WITH PASSWORD :'grafanareader_password';
+ALTER USER tableau WITH PASSWORD :'tableau_password';
 
 
 
