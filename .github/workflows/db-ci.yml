@@ -5,35 +5,49 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
-env:
-  # Tell Sqitch where to find secrets - in this case we just use the example secrets
-  SQITCH_USER_CONFIG: 'sqitch_secrets.conf.example'
 
 jobs:
   migrate-and-seed:
     runs-on: ubuntu-latest
 
+    services:
+      timescaledb:
+        image: timescale/timescaledb-ha:pg17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tsdb
+        ports:
+          - 25432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Sqitch install
-        run: sudo apt-get install sqitch libdbd-pg-perl postgresql-client libdbd-sqlite3-perl sqlite3 && sqitch --help
-      - name: Start Timescale
-        run: bin/ts-up
-      # Looking at the logs it takes about 15 seconds so give a little buffer.
-      # IF we don't do this the migrations below fail.
-      - name: Wait Timescale
-        run: sleep 25
-      - name: Timescale Migrations
-        run: cd sqitch && sqitch deploy --target self-hosted-timescale-local --verbose && cd -
+        run: docker pull sqitch/sqitch && curl -L https://git.io/JJKCn -o /usr/local/bin/sqitch && chmod +x /usr/local/bin/sqitch && sqitch --help
 
-      # uncomment the following to be able to ssh in and investigate an issue:
-      #
-      # - name: Setup tmate session
-      #   if: success() || failure()
-      #   uses: mxschmitt/action-tmate@v3
-      
-      - name: create .pgpass for seed script
-        run: mkdir -p /tmp/psql-script/ && echo "*:*:postgres:postgres:postgres" > /tmp/psql-script/.pgpass && chmod 0600 /tmp/psql-script/.pgpass
+      - name: Setup DB
+        run: |
+          docker run --rm --network host postgres:17-alpine psql \
+            "postgresql://postgres:postgres@localhost:25432/postgres" \
+            -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='tsdbadmin') THEN CREATE ROLE tsdbadmin LOGIN SUPERUSER PASSWORD 'tsdbadmin'; ELSE ALTER USER tsdbadmin WITH PASSWORD 'tsdbadmin'; END IF; END \$\$;"
+
+      - name: Timescale Migrations
+        run: |
+          cd sqitch && sqitch deploy "db:pg://tsdbadmin:tsdbadmin@localhost:25432/tsdb" \
+            --set flows_password=flows \
+            --set grafanareader_password=grafanareader \
+            --set tableau_password=tableau \
+            --set env=local \
+            --verbose && cd -
+
       - name: Flows Seed
-        run: bin/ts-seed
+        run: |
+          docker run --rm --network host \
+            -v "$(pwd)/sqitch/seed:/seed" postgres:17-alpine \
+            psql "postgresql://tsdbadmin:tsdbadmin@localhost:25432/tsdb" \
+            -f /seed/seed.sql
