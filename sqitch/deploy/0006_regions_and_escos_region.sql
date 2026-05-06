@@ -26,7 +26,6 @@ ALTER TABLE flows.escos ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable read access for all users" ON flows.regions FOR SELECT USING (true);
 ALTER TABLE flows.regions ENABLE ROW LEVEL SECURITY;
 
-GRANT SELECT ON TABLE flows.regions TO anon;
 GRANT SELECT ON TABLE flows.regions TO authenticated;
 GRANT SELECT ON TABLE flows.regions TO service_role;
 
