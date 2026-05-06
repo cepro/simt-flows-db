@@ -26,8 +26,10 @@ ALTER TABLE flows.escos ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable read access for all users" ON flows.regions FOR SELECT USING (true);
 ALTER TABLE flows.regions ENABLE ROW LEVEL SECURITY;
 
-GRANT SELECT ON TABLE flows.regions TO authenticated;
-GRANT SELECT ON TABLE flows.regions TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE flows.regions TO flows;
+GRANT SELECT ON TABLE flows.regions TO public_backend;
+GRANT SELECT ON TABLE flows.regions TO tableau;
+GRANT SELECT ON TABLE flows.regions TO grafanareader;
 
 INSERT INTO flows.regions (code, name) VALUES
     ('south_west', 'South West'),
