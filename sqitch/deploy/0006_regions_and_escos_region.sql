@@ -27,7 +27,6 @@ CREATE POLICY "Enable read access for all users" ON flows.regions FOR SELECT USI
 ALTER TABLE flows.regions ENABLE ROW LEVEL SECURITY;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE flows.regions TO flows;
-GRANT SELECT ON TABLE flows.regions TO public_backend;
 GRANT SELECT ON TABLE flows.regions TO tableau;
 GRANT SELECT ON TABLE flows.regions TO grafanareader;
 
